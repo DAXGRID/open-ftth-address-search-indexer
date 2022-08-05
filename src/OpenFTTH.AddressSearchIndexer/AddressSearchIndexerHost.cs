@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Text.Json;
+using OpenFTTH.EventSourcing;
 
 namespace OpenFTTH.AddressSearchIndexer;
 
@@ -8,21 +8,33 @@ internal sealed class AddressSearchIndexerHost : BackgroundService
 {
     private readonly ILogger<AddressSearchIndexerHost> _logger;
     private readonly Setting _setting;
+    private readonly IEventStore _eventStore;
+    private const int _catchUpTime = 30000;
 
     public AddressSearchIndexerHost(
         ILogger<AddressSearchIndexerHost> logger,
-        Setting setting)
+        Setting setting,
+        IEventStore eventStore)
     {
         _logger = logger;
         _setting = setting;
+        _eventStore = eventStore;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation($"Starting {nameof(AddressSearchIndexerHost)}.");
 
-        _logger.LogInformation("{Settings}", JsonSerializer.Serialize(_setting));
+        _logger.LogInformation("Starting dehydration.");
+        await _eventStore.DehydrateProjectionsAsync().ConfigureAwait(false);
+        _logger.LogInformation("Finished dehydration.");
 
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            await Task.Delay(_catchUpTime, stoppingToken).ConfigureAwait(false);
+            _logger.LogInformation("Checking for new events.");
+            await _eventStore.CatchUpAsync().ConfigureAwait(false);
+        }
         await Task.CompletedTask.ConfigureAwait(false);
     }
 }
