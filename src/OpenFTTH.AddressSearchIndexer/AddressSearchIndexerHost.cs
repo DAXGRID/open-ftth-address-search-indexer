@@ -26,15 +26,15 @@ internal sealed class AddressSearchIndexerHost : BackgroundService
         _logger.LogInformation($"Starting {nameof(AddressSearchIndexerHost)}.");
 
         _logger.LogInformation("Starting dehydration.");
-        await _eventStore.DehydrateProjectionsAsync().ConfigureAwait(false);
+        await _eventStore.DehydrateProjectionsAsync(stoppingToken).ConfigureAwait(false);
         _logger.LogInformation("Finished dehydration.");
 
         while (!stoppingToken.IsCancellationRequested)
         {
             await Task.Delay(_catchUpTime, stoppingToken).ConfigureAwait(false);
             _logger.LogInformation("Checking for new events.");
-            await _eventStore.CatchUpAsync().ConfigureAwait(false);
+            await _eventStore.CatchUpAsync(stoppingToken).ConfigureAwait(false);
+            _logger.LogInformation("Finished checking for new events.");
         }
-        await Task.CompletedTask.ConfigureAwait(false);
     }
 }
