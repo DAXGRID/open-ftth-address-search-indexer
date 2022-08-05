@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
+using System.Text.Json;
 
 namespace OpenFTTH.AddressSearchIndexer;
 
@@ -18,9 +19,16 @@ internal static class HostConfig
 
     private static void ConfigureServices(IHostBuilder hostBuilder)
     {
+        var settingsJson = JsonDocument.Parse(File.ReadAllText("appsettings.json"))
+            .RootElement.GetProperty("settings").ToString();
+
+        var setting = JsonSerializer.Deserialize<Setting>(settingsJson) ??
+            throw new ArgumentException("Could not deserialize appsettings into settings.");
+
         hostBuilder.ConfigureServices((hostContext, services) =>
         {
             services.AddHostedService<AddressSearchIndexerHost>();
+            services.AddSingleton<Setting>(setting);
         });
     }
 
