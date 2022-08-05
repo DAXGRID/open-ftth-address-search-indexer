@@ -1,9 +1,13 @@
+using Microsoft.Extensions.Hosting;
+
 namespace OpenFTTH.AddressSearchIndexer;
 
 public sealed class Program
 {
-    public static void Main()
+    public static async Task Main()
     {
-        Console.WriteLine("Hello world!");
+        using var host = HostConfig.Configure();
+        await host.StartAsync().ConfigureAwait(false);
+        await host.WaitForShutdownAsync().ConfigureAwait(false);
     }
 }
