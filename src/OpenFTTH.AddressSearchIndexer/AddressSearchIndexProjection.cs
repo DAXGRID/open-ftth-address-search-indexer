@@ -14,7 +14,7 @@ internal sealed record TypesenseAddress
     public string RoadNameHouseNumber { get; init; }
 
     [JsonPropertyName("townName")]
-    public string TownName { get; init; }
+    public string? TownName { get; init; }
 
     [JsonPropertyName("postDistrictCode")]
     public string PostDistrictCode { get; init; }
@@ -25,7 +25,7 @@ internal sealed record TypesenseAddress
     public TypesenseAddress(
         string id,
         string roadNameHouseNumber,
-        string townName,
+        string? townName,
         string postDistrictCode,
         string postDistrictName)
     {
@@ -39,13 +39,14 @@ internal sealed record TypesenseAddress
 
 internal sealed class AddressSearchIndexProjection : ProjectionBase
 {
-    private record PostCode(string Number, string Name);
+    private record PostDistrict(string Code, string Name);
 
     private uint _count;
     private readonly ILogger<AddressSearchIndexProjection> _logger;
 
-    private readonly Dictionary<Guid, PostCode> _postCodeIdToPostCode = new();
+    private readonly Dictionary<Guid, PostDistrict> _postCodeIdToPostCode = new();
     private readonly Dictionary<Guid, string> _roadIdToName = new();
+    private readonly Dictionary<Guid, TypesenseAddress> _accessAddressIdToAddress = new();
 
     public AddressSearchIndexProjection(
         ILogger<AddressSearchIndexProjection> logger)
@@ -90,16 +91,13 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
                 HandleRoadDeleted(roadDeleted);
                 break;
             case (AccessAddressCreated accessAddressCreated):
-                await HandleAccessAddressCreated(accessAddressCreated)
-                    .ConfigureAwait(false);
+                HandleAccessAddressCreated(accessAddressCreated);
                 break;
             case (AccessAddressUpdated accessAddressUpdated):
-                await HandleAccessAddressUpdated(accessAddressUpdated)
-                    .ConfigureAwait(false);
+                HandleAccessAddressUpdated(accessAddressUpdated);
                 break;
             case (AccessAddressDeleted accessAddressDeleted):
-                await HandleAccessAddressDeleted(accessAddressDeleted)
-                    .ConfigureAwait(false);
+                HandleAccessAddressDeleted(accessAddressDeleted);
                 break;
             default:
                 throw new ArgumentException(
@@ -110,24 +108,44 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
         {
             _logger.LogInformation("{Count}", _count);
         }
-    }
 
-    private static async Task HandleAccessAddressCreated(
-        AccessAddressCreated accessAddressCreated)
-    {
         await Task.CompletedTask.ConfigureAwait(false);
     }
 
-    private static async Task HandleAccessAddressUpdated(
-        AccessAddressUpdated accessAddressUpdated)
+    private void HandleAccessAddressCreated(AccessAddressCreated accessAddressCreated)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
+        var roadName = _roadIdToName[accessAddressCreated.RoadId];
+        var postDistrict = _postCodeIdToPostCode[accessAddressCreated.PostCodeId];
+
+        _accessAddressIdToAddress.Add(
+            accessAddressCreated.Id,
+            new(
+                id: accessAddressCreated.Id.ToString(),
+                roadNameHouseNumber: $"{roadName} {accessAddressCreated.HouseNumber}",
+                townName: accessAddressCreated.TownName,
+                postDistrictCode: postDistrict.Code,
+                postDistrictName: postDistrict.Name
+            ));
     }
 
-    private static async Task HandleAccessAddressDeleted(
-        AccessAddressDeleted accessAddressDeleted)
+    private void HandleAccessAddressUpdated(AccessAddressUpdated accessAddressUpdated)
     {
-        await Task.CompletedTask.ConfigureAwait(false);
+        var oldAccessAddress = _accessAddressIdToAddress[accessAddressUpdated.Id];
+        var postDistrict = _postCodeIdToPostCode[accessAddressUpdated.PostCodeId];
+        var roadName = _roadIdToName[accessAddressUpdated.RoadId];
+
+        _accessAddressIdToAddress[accessAddressUpdated.Id] = oldAccessAddress with
+        {
+            PostDistrictCode = postDistrict.Code,
+            PostDistrictName = postDistrict.Name,
+            RoadNameHouseNumber = $"{roadName} {accessAddressUpdated.HouseNumber}",
+            TownName = accessAddressUpdated.TownName,
+        };
+    }
+
+    private void HandleAccessAddressDeleted(AccessAddressDeleted accessAddressDeleted)
+    {
+        _accessAddressIdToAddress.Remove(accessAddressDeleted.Id);
     }
 
     private void HandlePostCodeCreated(PostCodeCreated postCodeCreated)
