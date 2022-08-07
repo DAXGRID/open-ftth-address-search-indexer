@@ -39,13 +39,26 @@ internal sealed record TypesenseAddress
 
 internal sealed class AddressSearchIndexProjection : ProjectionBase
 {
-    private readonly ILogger<AddressSearchIndexProjection> _logger;
+    private record PostCode(string Number, string Name);
+
     private uint _count;
+    private readonly ILogger<AddressSearchIndexProjection> _logger;
+
+    private readonly Dictionary<Guid, PostCode> _postCodeIdToPostCode = new();
+    private readonly Dictionary<Guid, string> _roadIdToName = new();
 
     public AddressSearchIndexProjection(
         ILogger<AddressSearchIndexProjection> logger)
     {
         _logger = logger;
+
+        ProjectEventAsync<PostCodeCreated>(ProjectAsync);
+        ProjectEventAsync<PostCodeUpdated>(ProjectAsync);
+        ProjectEventAsync<PostCodeDeleted>(ProjectAsync);
+
+        ProjectEventAsync<RoadCreated>(ProjectAsync);
+        ProjectEventAsync<RoadUpdated>(ProjectAsync);
+        ProjectEventAsync<RoadDeleted>(ProjectAsync);
 
         ProjectEventAsync<AccessAddressCreated>(ProjectAsync);
         ProjectEventAsync<AccessAddressUpdated>(ProjectAsync);
@@ -58,14 +71,35 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 
         switch (eventEnvelope.Data)
         {
+            case (PostCodeCreated postCodeCreated):
+                HandlePostCodeCreated(postCodeCreated);
+                break;
+            case (PostCodeUpdated postCodeUpdated):
+                HandlePostCodeUpdated(postCodeUpdated);
+                break;
+            case (PostCodeDeleted postCodeDeleted):
+                HandlePostCodeDeleted(postCodeDeleted);
+                break;
+            case (RoadCreated roadCreated):
+                HandleRoadCreated(roadCreated);
+                break;
+            case (RoadUpdated roadUpdated):
+                HandleRoadUpdated(roadUpdated);
+                break;
+            case (RoadDeleted roadDeleted):
+                HandleRoadDeleted(roadDeleted);
+                break;
             case (AccessAddressCreated accessAddressCreated):
-                await Handle(accessAddressCreated).ConfigureAwait(false);
+                await HandleAccessAddressCreated(accessAddressCreated)
+                    .ConfigureAwait(false);
                 break;
             case (AccessAddressUpdated accessAddressUpdated):
-                await Handle(accessAddressUpdated).ConfigureAwait(false);
+                await HandleAccessAddressUpdated(accessAddressUpdated)
+                    .ConfigureAwait(false);
                 break;
             case (AccessAddressDeleted accessAddressDeleted):
-                await Handle(accessAddressDeleted).ConfigureAwait(false);
+                await HandleAccessAddressDeleted(accessAddressDeleted)
+                    .ConfigureAwait(false);
                 break;
             default:
                 throw new ArgumentException(
@@ -78,18 +112,57 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
         }
     }
 
-    private static async Task Handle(AccessAddressCreated accessAddressCreated)
+    private static async Task HandleAccessAddressCreated(
+        AccessAddressCreated accessAddressCreated)
     {
         await Task.CompletedTask.ConfigureAwait(false);
     }
 
-    private static async Task Handle(AccessAddressUpdated accessAddressUpdated)
+    private static async Task HandleAccessAddressUpdated(
+        AccessAddressUpdated accessAddressUpdated)
     {
         await Task.CompletedTask.ConfigureAwait(false);
     }
 
-    private static async Task Handle(AccessAddressDeleted accessAddressDeleted)
+    private static async Task HandleAccessAddressDeleted(
+        AccessAddressDeleted accessAddressDeleted)
     {
         await Task.CompletedTask.ConfigureAwait(false);
+    }
+
+    private void HandlePostCodeCreated(PostCodeCreated postCodeCreated)
+    {
+        _postCodeIdToPostCode.Add(
+            postCodeCreated.Id,
+            new(postCodeCreated.Number, postCodeCreated.Name));
+    }
+
+    private void HandlePostCodeUpdated(PostCodeUpdated postCodeUpdated)
+    {
+        var postCode = _postCodeIdToPostCode[postCodeUpdated.Id];
+        _postCodeIdToPostCode[postCodeUpdated.Id] = postCode with
+        {
+            Name = postCodeUpdated.Name
+        };
+    }
+
+    private void HandlePostCodeDeleted(PostCodeDeleted postCodeDeleted)
+    {
+        _postCodeIdToPostCode.Remove(postCodeDeleted.Id);
+    }
+
+    private void HandleRoadCreated(RoadCreated roadCreated)
+    {
+        _roadIdToName.Add(roadCreated.Id, roadCreated.Name);
+    }
+
+    private void HandleRoadUpdated(RoadUpdated roadUpdated)
+    {
+        _roadIdToName[roadUpdated.Id] = roadUpdated.Name;
+    }
+
+    private void HandleRoadDeleted(RoadDeleted roadDeleted)
+    {
+        _roadIdToName.Remove(roadDeleted.Id);
     }
 }
