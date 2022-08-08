@@ -5,8 +5,10 @@ using OpenFTTH.EventSourcing.Postgres;
 using Serilog;
 using Serilog.Events;
 using Serilog.Formatting.Compact;
+using System.Globalization;
 using System.Reflection;
 using System.Text.Json;
+using Typesense.Setup;
 
 namespace OpenFTTH.AddressSearchIndexer;
 
@@ -26,12 +28,28 @@ internal static class HostConfig
             .RootElement.GetProperty("settings").ToString();
 
         var setting = JsonSerializer.Deserialize<Setting>(settingsJson) ??
-            throw new ArgumentException("Could not deserialize appsettings into settings.");
+            throw new ArgumentException(
+                "Could not deserialize appsettings into settings.");
 
         hostBuilder.ConfigureServices((hostContext, services) =>
         {
             services.AddHostedService<AddressSearchIndexerHost>();
+
             services.AddSingleton<Setting>(setting);
+
+            services.AddTypesenseClient(config =>
+            {
+                config.ApiKey = setting.Typesense.Key;
+                config.Nodes = new List<Node>
+                {
+                    new Node(
+                        host: setting.Typesense.Uri.Host,
+                        port: setting.Typesense.Uri.Port.ToString(
+                            "G", CultureInfo.InvariantCulture),
+                        protocol: setting.Typesense.Uri.Scheme)
+                };
+            });
+
             services.AddSingleton<IEventStore>(
                 e =>
                 new PostgresEventStore(

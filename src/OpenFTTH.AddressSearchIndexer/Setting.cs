@@ -6,13 +6,15 @@ internal sealed record TypesenseSetting
 {
     [JsonPropertyName("uri")]
     public Uri Uri { get; init; }
+
     [JsonPropertyName("key")]
     public string Key { get; init; }
-    [JsonPropertyName("collectionAliasName")]
-    public string CollectionAliasName { get; init; }
+
+    [JsonPropertyName("collectionAlias")]
+    public string CollectionAlias { get; init; }
 
     [JsonConstructor]
-    public TypesenseSetting(Uri uri, string key, string collectionAliasName)
+    public TypesenseSetting(Uri uri, string key, string collectionAlias)
     {
         if (String.IsNullOrWhiteSpace(uri.AbsoluteUri))
         {
@@ -26,15 +28,15 @@ internal sealed record TypesenseSetting
                 "Cannot be null or whitespace.", nameof(key));
         }
 
-        if (String.IsNullOrWhiteSpace(collectionAliasName))
+        if (String.IsNullOrWhiteSpace(collectionAlias))
         {
             throw new ArgumentException(
-                "Cannot be null or whitespace.", nameof(collectionAliasName));
+                "Cannot be null or whitespace.", nameof(collectionAlias));
         }
 
         Uri = uri;
         Key = key;
-        CollectionAliasName = collectionAliasName;
+        CollectionAlias = collectionAlias;
     }
 }
 
