@@ -17,36 +17,41 @@ internal sealed record TypesenseAddress
     public string? TownName { get; init; }
 
     [JsonPropertyName("postDistrictCode")]
-    public string PostDistrictCode { get; init; }
+    public string PostCode { get; init; }
 
     [JsonPropertyName("postDistrictName")]
-    public string PostDistrictName { get; init; }
+    public string PostCodeName { get; init; }
 
     public TypesenseAddress(
         string id,
         string roadNameHouseNumber,
         string? townName,
-        string postDistrictCode,
-        string postDistrictName)
+        string postCode,
+        string postCodeName)
     {
         Id = id;
         RoadNameHouseNumber = roadNameHouseNumber;
         TownName = townName;
-        PostDistrictCode = postDistrictCode;
-        PostDistrictName = postDistrictName;
+        PostCode = postCode;
+        PostCodeName = postCodeName;
     }
 }
 
 internal sealed class AddressSearchIndexProjection : ProjectionBase
 {
     private record PostDistrict(string Code, string Name);
+    private record AccessAddress(
+        Guid Id,
+        Guid RoadId,
+        string? TownName,
+        Guid PostCodeId);
 
     private uint _count;
     private readonly ILogger<AddressSearchIndexProjection> _logger;
 
-    private readonly Dictionary<Guid, PostDistrict> _postCodeIdToPostCode = new();
+    private readonly Dictionary<Guid, PostDistrict> _idToPostCode = new();
     private readonly Dictionary<Guid, string> _roadIdToName = new();
-    private readonly Dictionary<Guid, TypesenseAddress> _accessAddressIdToAddress = new();
+    private readonly Dictionary<Guid, AccessAddress> _idToAddress = new();
 
     public AddressSearchIndexProjection(
         ILogger<AddressSearchIndexProjection> logger)
@@ -114,51 +119,44 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 
     private void HandleAccessAddressCreated(AccessAddressCreated accessAddressCreated)
     {
-        var roadName = _roadIdToName[accessAddressCreated.RoadId];
-        var postDistrict = _postCodeIdToPostCode[accessAddressCreated.PostCodeId];
-
-        _accessAddressIdToAddress.Add(
+        _idToAddress.Add(
             accessAddressCreated.Id,
             new(
-                id: accessAddressCreated.Id.ToString(),
-                roadNameHouseNumber: $"{roadName} {accessAddressCreated.HouseNumber}",
-                townName: accessAddressCreated.TownName,
-                postDistrictCode: postDistrict.Code,
-                postDistrictName: postDistrict.Name
+                Id: accessAddressCreated.Id,
+                RoadId: accessAddressCreated.RoadId,
+                TownName: accessAddressCreated.TownName,
+                PostCodeId: accessAddressCreated.PostCodeId
             ));
     }
 
     private void HandleAccessAddressUpdated(AccessAddressUpdated accessAddressUpdated)
     {
-        var oldAccessAddress = _accessAddressIdToAddress[accessAddressUpdated.Id];
-        var postDistrict = _postCodeIdToPostCode[accessAddressUpdated.PostCodeId];
-        var roadName = _roadIdToName[accessAddressUpdated.RoadId];
+        var oldAccessAddress = _idToAddress[accessAddressUpdated.Id];
 
-        _accessAddressIdToAddress[accessAddressUpdated.Id] = oldAccessAddress with
+        _idToAddress[accessAddressUpdated.Id] = oldAccessAddress with
         {
-            PostDistrictCode = postDistrict.Code,
-            PostDistrictName = postDistrict.Name,
-            RoadNameHouseNumber = $"{roadName} {accessAddressUpdated.HouseNumber}",
+            RoadId = accessAddressUpdated.RoadId,
             TownName = accessAddressUpdated.TownName,
+            PostCodeId = accessAddressUpdated.PostCodeId
         };
     }
 
     private void HandleAccessAddressDeleted(AccessAddressDeleted accessAddressDeleted)
     {
-        _accessAddressIdToAddress.Remove(accessAddressDeleted.Id);
+        _idToAddress.Remove(accessAddressDeleted.Id);
     }
 
     private void HandlePostCodeCreated(PostCodeCreated postCodeCreated)
     {
-        _postCodeIdToPostCode.Add(
+        _idToPostCode.Add(
             postCodeCreated.Id,
             new(postCodeCreated.Number, postCodeCreated.Name));
     }
 
     private void HandlePostCodeUpdated(PostCodeUpdated postCodeUpdated)
     {
-        var postCode = _postCodeIdToPostCode[postCodeUpdated.Id];
-        _postCodeIdToPostCode[postCodeUpdated.Id] = postCode with
+        var postCode = _idToPostCode[postCodeUpdated.Id];
+        _idToPostCode[postCodeUpdated.Id] = postCode with
         {
             Name = postCodeUpdated.Name
         };
@@ -166,7 +164,7 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 
     private void HandlePostCodeDeleted(PostCodeDeleted postCodeDeleted)
     {
-        _postCodeIdToPostCode.Remove(postCodeDeleted.Id);
+        _idToPostCode.Remove(postCodeDeleted.Id);
     }
 
     private void HandleRoadCreated(RoadCreated roadCreated)
