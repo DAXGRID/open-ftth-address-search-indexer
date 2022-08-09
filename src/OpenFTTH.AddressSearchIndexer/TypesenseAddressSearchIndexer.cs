@@ -101,16 +101,14 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
         var previousCollectionAlias =
             await RetrieveCollectionAlias().ConfigureAwait(false);
 
-        _logger.LogInformation("Updating alias to {CollectionAlias}.", collectionName);
+        _logger.LogInformation("Switching {Alias} to {CollectionAlias}.", _setting.Typesense.CollectionAlias, collectionName);
         await _typesenseClient
-            .UpsertCollectionAlias(collectionName, new(_setting.Typesense.CollectionAlias))
+            .UpsertCollectionAlias(_setting.Typesense.CollectionAlias, new(collectionName))
             .ConfigureAwait(false);
 
         // We delete the old collection since it is not needed anymore.
         await DeletePreviousCollectionIfExists(previousCollectionAlias)
             .ConfigureAwait(false);
-
-        await Task.CompletedTask.ConfigureAwait(false);
     }
 
     private async Task DeletePreviousCollectionIfExists(
