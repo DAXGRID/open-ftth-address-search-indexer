@@ -22,7 +22,7 @@ executors:
       GIT_USER_NAME: "dax-bot"
       GIT_USER_EMAIL: "admin@dax.dk"
       GIT_CLONE_REPO: "git@github.com:DAXGRID/dax-charts.git"
-      SSH_FINGERPRINT: ""
+      SSH_FINGERPRINT: "37:2d:dc:b1:1f:be:9b:dd:45:93:53:be:ec:81:d4:59"
     docker:
     - image: alpine/git
 
@@ -122,12 +122,12 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
-      # - update-helm-chart:
-      #     context: docker
-      #     requires:
-      #      - docker-publish-image
-      #     filters:
-      #       tags:
-      #         only: /^v.*/
-      #       branches:
-      #         ignore: /.*/
+      - update-helm-chart:
+          context: docker
+          requires:
+           - docker-publish-image
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
