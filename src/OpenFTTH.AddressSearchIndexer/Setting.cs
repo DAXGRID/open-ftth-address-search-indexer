@@ -13,8 +13,11 @@ internal sealed record TypesenseSetting
     [JsonPropertyName("collectionAlias")]
     public string CollectionAlias { get; init; }
 
+    [JsonPropertyName("batchSize")]
+    public uint BatchSize { get; init; }
+
     [JsonConstructor]
-    public TypesenseSetting(Uri uri, string key, string collectionAlias)
+    public TypesenseSetting(Uri uri, string key, string collectionAlias, uint batchSize)
     {
         if (String.IsNullOrWhiteSpace(uri.AbsoluteUri))
         {
@@ -34,9 +37,15 @@ internal sealed record TypesenseSetting
                 "Cannot be null or whitespace.", nameof(collectionAlias));
         }
 
+        if (batchSize == 0)
+        {
+            throw new ArgumentException("Must be greater than 0.", nameof(batchSize));
+        }
+
         Uri = uri;
         Key = key;
         CollectionAlias = collectionAlias;
+        BatchSize = batchSize;
     }
 }
 

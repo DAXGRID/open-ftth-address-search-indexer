@@ -34,9 +34,7 @@ internal static class HostConfig
         hostBuilder.ConfigureServices((hostContext, services) =>
         {
             services.AddHostedService<AddressSearchIndexerHost>();
-
             services.AddSingleton<Setting>(setting);
-
             services.AddTypesenseClient(config =>
             {
                 config.ApiKey = setting.Typesense.Key;
@@ -49,18 +47,17 @@ internal static class HostConfig
                         protocol: setting.Typesense.Uri.Scheme)
                 };
             });
-
             services.AddSingleton<IEventStore>(
                 e =>
                 new PostgresEventStore(
                     serviceProvider: e.GetRequiredService<IServiceProvider>(),
                     connectionString: setting.EventStoreConnectionString,
                     databaseSchemaName: "events"));
-
             services.AddProjections(new Assembly[]
             {
                 AppDomain.CurrentDomain.Load("OpenFTTH.AddressSearchIndexer")
             });
+            services.AddSingleton<IAddressSearchIndexer, TypesenseAddressSearchIndexer>();
         });
     }
 
