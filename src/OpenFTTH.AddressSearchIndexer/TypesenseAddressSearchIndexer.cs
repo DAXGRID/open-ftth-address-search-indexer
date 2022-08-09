@@ -101,7 +101,10 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
         var previousCollectionAlias =
             await RetrieveCollectionAlias().ConfigureAwait(false);
 
-        _logger.LogInformation("Switching {Alias} to {CollectionAlias}.", _setting.Typesense.CollectionAlias, collectionName);
+        _logger.LogInformation(
+            "Switching {Alias} to {CollectionAlias}.",
+            _setting.Typesense.CollectionAlias, collectionName);
+
         await _typesenseClient
             .UpsertCollectionAlias(_setting.Typesense.CollectionAlias, new(collectionName))
             .ConfigureAwait(false);
@@ -155,9 +158,17 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
             count++;
             if (imports.Count == _setting.Typesense.BatchSize)
             {
-                _ = await _typesenseClient
+                var results = await _typesenseClient
                     .ImportDocuments(collectionName, imports, 250)
                     .ConfigureAwait(false);
+
+                var isAllSuccess = results.All(x => x.Success);
+
+                if (!isAllSuccess)
+                {
+                    throw new InvalidOperationException(
+                        "Not all imports were successfull.");
+                }
 
                 imports.Clear();
             }
