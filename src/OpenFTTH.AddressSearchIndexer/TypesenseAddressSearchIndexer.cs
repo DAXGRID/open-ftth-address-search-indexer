@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 using System.Text.Json.Serialization;
 using Typesense;
 
@@ -41,8 +42,8 @@ internal sealed record TypesenseAddress
         TownName = townName;
         PostCode = postCode;
         PostCodeName = postCodeName;
-        NorthCoordinate = northCoordinate.ToString();
-        EastCoordinate = eastCoordinate.ToString();
+        NorthCoordinate = northCoordinate.ToString("G", CultureInfo.InvariantCulture);
+        EastCoordinate = eastCoordinate.ToString("G", CultureInfo.InvariantCulture);
     }
 }
 
