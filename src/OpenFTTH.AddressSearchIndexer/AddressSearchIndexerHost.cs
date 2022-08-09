@@ -29,6 +29,9 @@ internal sealed class AddressSearchIndexerHost : BackgroundService
     {
         _logger.LogInformation($"Starting {nameof(AddressSearchIndexerHost)}.");
 
+        _logger.LogInformation("Starting initial cleanup.");
+        await _addressSearchIndexer.InitialCleanup().ConfigureAwait(false);
+
         _logger.LogInformation("Starting dehydration.");
         await _eventStore.DehydrateProjectionsAsync(stoppingToken).ConfigureAwait(false);
 

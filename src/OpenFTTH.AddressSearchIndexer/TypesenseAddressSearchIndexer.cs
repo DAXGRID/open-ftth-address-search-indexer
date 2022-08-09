@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using OpenFTTH.EventSourcing;
 using System.Text.Json.Serialization;
 using Typesense;
 
@@ -63,6 +62,29 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
         _setting = setting;
     }
 
+    public async Task InitialCleanup()
+    {
+        var collectionAliasTask = RetrieveCollectionAlias();
+        var collectionsTask = _typesenseClient.RetrieveCollections();
+
+        var collectionAlias = await collectionAliasTask.ConfigureAwait(false);
+        var collections = await collectionsTask.ConfigureAwait(false);
+
+        // We want all the collections that follows the collection name scheme
+        // that is not the current aliased collection.
+        var collectionToBeDeleted = collections
+            .Select(x => x.Name)
+            .Where(x => x.StartsWith(_setting.Typesense.CollectionAlias,
+                                     StringComparison.InvariantCulture))
+            .Where(x => x != collectionAlias?.CollectionName);
+
+        foreach (var c in collectionToBeDeleted)
+        {
+            _logger.LogInformation("Deleting dead collection '{Collection}'.", c);
+            await _typesenseClient.DeleteCollection(c).ConfigureAwait(false);
+        }
+    }
+
     public async Task Index(AddressSearchIndexProjection projection)
     {
         var collectionName = $"{_setting.Typesense.CollectionAlias}-{Guid.NewGuid()}";
@@ -77,7 +99,7 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
             "Finished indexing a total of {Total} documents to Typesense.", count);
 
         var previousCollectionAlias =
-            await RetrievePreviousCollectionAlias().ConfigureAwait(false);
+            await RetrieveCollectionAlias().ConfigureAwait(false);
 
         _logger.LogInformation("Updating alias to {CollectionAlias}.", collectionName);
         await _typesenseClient
@@ -106,7 +128,7 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
         }
     }
 
-    private async Task<CollectionAliasResponse?> RetrievePreviousCollectionAlias()
+    private async Task<CollectionAliasResponse?> RetrieveCollectionAlias()
     {
         CollectionAliasResponse? previousCollectionAlias = null;
         try

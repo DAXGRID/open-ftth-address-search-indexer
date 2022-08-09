@@ -82,7 +82,7 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 
         if (_count % 10000 == 0)
         {
-            _logger.LogInformation("{Count} events processed.", _count);
+            _logger.LogDebug("{Count} events processed.", _count);
         }
 
         await Task.CompletedTask.ConfigureAwait(false);
