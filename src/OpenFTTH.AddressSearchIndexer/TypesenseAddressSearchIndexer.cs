@@ -103,7 +103,7 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
 
         _logger.LogInformation("Updating alias to {CollectionAlias}.", collectionName);
         await _typesenseClient
-            .UpsertCollectionAlias(_setting.Typesense.CollectionAlias, new(collectionName))
+            .UpsertCollectionAlias(collectionName, new(_setting.Typesense.CollectionAlias))
             .ConfigureAwait(false);
 
         // We delete the old collection since it is not needed anymore.
