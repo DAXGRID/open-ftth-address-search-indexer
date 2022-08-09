@@ -210,8 +210,8 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
                 new Field("townName", FieldType.String, false, true),
                 new Field("postDistrictCode", FieldType.String, false, false),
                 new Field("postDistrictName", FieldType.String, false, false),
-                new Field("eastCoordinate", FieldType.Float, false, true, false),
-                new Field("northCoordinate", FieldType.Float, false, true, false),
+                new Field("eastCoordinate", FieldType.String, false, true, false),
+                new Field("northCoordinate", FieldType.String, false, true, false),
             });
 
         _ = await _typesenseClient.CreateCollection(schema).ConfigureAwait(false);
