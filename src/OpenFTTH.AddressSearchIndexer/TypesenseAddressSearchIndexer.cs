@@ -23,10 +23,10 @@ internal sealed record TypesenseAddress
     public string PostCodeName { get; init; }
 
     [JsonPropertyName("northCoordinate")]
-    public string NorthCoordinate { get; init; }
+    public double NorthCoordinate { get; init; }
 
     [JsonPropertyName("eastCoordinate")]
-    public string EastCoordinate { get; init; }
+    public double EastCoordinate { get; init; }
 
     public TypesenseAddress(
         string id,
@@ -42,8 +42,8 @@ internal sealed record TypesenseAddress
         TownName = townName;
         PostCode = postCode;
         PostCodeName = postCodeName;
-        NorthCoordinate = northCoordinate.ToString("G", CultureInfo.InvariantCulture);
-        EastCoordinate = eastCoordinate.ToString("G", CultureInfo.InvariantCulture);
+        NorthCoordinate = northCoordinate;
+        EastCoordinate = eastCoordinate;
     }
 }
 
@@ -208,8 +208,8 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
                 new Field("townName", FieldType.String, false, true),
                 new Field("postDistrictCode", FieldType.String, false, false),
                 new Field("postDistrictName", FieldType.String, false, false),
-                new Field("eastCoordinate", FieldType.String, false, true, false),
-                new Field("northCoordinate", FieldType.String, false, true, false),
+                new Field("eastCoordinate", FieldType.Float, false, true, false),
+                new Field("northCoordinate", FieldType.Float, false, true, false),
             });
 
         _ = await _typesenseClient.CreateCollection(schema).ConfigureAwait(false);
