@@ -22,10 +22,10 @@ internal sealed record TypesenseAddress
     public string PostCodeName { get; init; }
 
     [JsonPropertyName("northCoordinate")]
-    public double NorthCoordinate { get; init; }
+    public string NorthCoordinate { get; init; }
 
     [JsonPropertyName("eastCoordinate")]
-    public double EastCoordinate { get; init; }
+    public string EastCoordinate { get; init; }
 
     public TypesenseAddress(
         string id,
@@ -41,8 +41,8 @@ internal sealed record TypesenseAddress
         TownName = townName;
         PostCode = postCode;
         PostCodeName = postCodeName;
-        NorthCoordinate = northCoordinate;
-        EastCoordinate = eastCoordinate;
+        NorthCoordinate = northCoordinate.ToString();
+        EastCoordinate = eastCoordinate.ToString();
     }
 }
 
