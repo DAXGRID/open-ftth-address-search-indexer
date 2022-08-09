@@ -47,8 +47,8 @@ internal sealed class AddressSearchIndexerHost : BackgroundService
             "Memory after address indexing {MibiBytes}.",
             Process.GetCurrentProcess().PrivateMemorySize64 / 1024 / 1024);
 
-        _logger.LogInformation($"Marking service as healthy.");
-        File.Create("/tmp/healthy");
+        _logger.LogInformation("Marking service as healthy.");
+        using var _ = File.Create("/tmp/healthy");
 
         while (!stoppingToken.IsCancellationRequested)
         {
