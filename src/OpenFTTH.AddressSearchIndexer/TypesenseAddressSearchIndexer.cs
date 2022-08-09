@@ -23,10 +23,10 @@ internal sealed record TypesenseAddress
     public string PostCodeName { get; init; }
 
     [JsonPropertyName("northCoordinate")]
-    public double NorthCoordinate { get; init; }
+    public string NorthCoordinate { get; init; }
 
     [JsonPropertyName("eastCoordinate")]
-    public double EastCoordinate { get; init; }
+    public string EastCoordinate { get; init; }
 
     public TypesenseAddress(
         string id,
@@ -34,8 +34,8 @@ internal sealed record TypesenseAddress
         string? townName,
         string postCode,
         string postCodeName,
-        double northCoordinate,
-        double eastCoordinate)
+        string northCoordinate,
+        string eastCoordinate)
     {
         Id = id;
         RoadNameHouseNumber = roadNameHouseNumber;
@@ -183,8 +183,10 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
                 townName: address.TownName,
                 postCode: postCode.Code,
                 postCodeName: postCode.Name,
-                northCoordinate: address.NorthCoordinate,
-                eastCoordinate: address.EastCoordinate);
+                northCoordinate: address.NorthCoordinate.ToString(
+                    "G", CultureInfo.InvariantCulture),
+                eastCoordinate: address.EastCoordinate.ToString(
+                    "G", CultureInfo.InvariantCulture));
 
             imports.Add(document);
         }
