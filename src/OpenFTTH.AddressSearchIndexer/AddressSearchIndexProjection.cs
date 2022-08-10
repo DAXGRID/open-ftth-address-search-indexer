@@ -42,7 +42,7 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
         ProjectEventAsync<AccessAddressDeleted>(ProjectAsync);
     }
 
-    private async Task ProjectAsync(IEventEnvelope eventEnvelope)
+    private Task ProjectAsync(IEventEnvelope eventEnvelope)
     {
         _count++;
 
@@ -80,12 +80,7 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
                     $"Could not handle typeof '{eventEnvelope.Data.GetType().Name}'");
         }
 
-        if (_count % 10000 == 0)
-        {
-            _logger.LogDebug("{Count} events processed.", _count);
-        }
-
-        await Task.CompletedTask.ConfigureAwait(false);
+        return Task.CompletedTask;
     }
 
     private void HandleAccessAddressCreated(AccessAddressCreated accessAddressCreated)
