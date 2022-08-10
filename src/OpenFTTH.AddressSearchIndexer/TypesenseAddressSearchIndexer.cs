@@ -163,9 +163,7 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
                     .ImportDocuments(collectionName, imports, 250)
                     .ConfigureAwait(false);
 
-                var isAllSuccess = results.All(x => x.Success);
-
-                if (!isAllSuccess)
+                if (results.All(x => x.Success))
                 {
                     throw new InvalidOperationException(
                         "Not all imports were successfull.");
