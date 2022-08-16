@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using System.Globalization;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Typesense;
 
@@ -160,13 +161,18 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
             if (imports.Count == _setting.Typesense.BatchSize)
             {
                 var results = await _typesenseClient
-                    .ImportDocuments(collectionName, imports, 250)
+                    .ImportDocuments(collectionName,
+                                     imports,
+                                     (int)_setting.Typesense.BatchSize)
                     .ConfigureAwait(false);
 
-                if (results.All(x => x.Success))
+                if (results.Any(x => !x.Success))
                 {
+                    var failedDocuments = results.Where(x => !x.Success);
+
                     throw new InvalidOperationException(
-                        "Not all imports were successfull.");
+                        @$"Not all imports were successfull.
+{JsonSerializer.Serialize(failedDocuments)}");
                 }
 
                 imports.Clear();
