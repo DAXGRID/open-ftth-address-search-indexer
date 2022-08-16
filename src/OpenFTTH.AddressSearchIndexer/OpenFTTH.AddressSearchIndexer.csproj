@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="Typesense" Version="4.3.1" />
-    <PackageReference Include="OpenFTTH.Core.Address" Version="0.9.0" />
+    <PackageReference Include="OpenFTTH.Core.Address" Version="0.12.0" />
     <PackageReference Include="OpenFTTH.EventSourcing" Version="2.7.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
