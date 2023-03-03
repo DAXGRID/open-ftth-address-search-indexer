@@ -69,7 +69,7 @@ internal sealed class AddressSearchIndexerHost : BackgroundService
                 }
                 else
                 {
-                    _logger.LogInformation("No changes since last run.");
+                    _logger.LogDebug("No changes since last run.");
                 }
             }
         }
