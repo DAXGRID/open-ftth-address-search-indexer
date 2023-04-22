@@ -53,7 +53,7 @@ internal sealed class AddressSearchIndexerHost : BackgroundService
         {
             await Task.Delay(_catchUpTimeMs, stoppingToken).ConfigureAwait(false);
 
-            _logger.LogInformation("Checking for new events.");
+            _logger.LogDebug("Checking for new events.");
             var changes = await _eventStore
                 .CatchUpAsync(stoppingToken)
                 .ConfigureAwait(false);
