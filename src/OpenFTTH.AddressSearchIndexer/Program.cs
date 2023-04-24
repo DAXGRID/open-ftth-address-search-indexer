@@ -5,12 +5,14 @@ using OpenFTTH.EventSourcing;
 
 namespace OpenFTTH.AddressSearchIndexer;
 
-public sealed class Program
+internal static class Program
 {
     public static async Task Main()
     {
         using var host = HostConfig.Configure();
-        var logger = host.Services.GetService<ILogger<Program>>();
+            var logger = host.Services
+            .GetService<ILoggerFactory>()
+            !.CreateLogger(nameof(Program));
 
         try
         {
