@@ -11,7 +11,7 @@ executors:
     environment:
       IMAGE_NAME: openftth/address-search-indexer
     docker:
-      - image: cimg/base:2020.09
+      - image: cimg/base:2023.08
         auth:
           username: $DOCKER_LOGIN
           password: $DOCKER_ACCESSTOKEN
