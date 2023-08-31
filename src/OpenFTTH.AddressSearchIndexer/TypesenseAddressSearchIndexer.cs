@@ -160,6 +160,7 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
             count++;
             if (imports.Count == _setting.Typesense.BatchSize)
             {
+                _logger.LogInformation("Importing {AddressCount}.", imports.Count);
                 var results = await _typesenseClient
                     .ImportDocuments(collectionName,
                                      imports,
@@ -196,6 +197,7 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
         }
 
         // Import the remaining
+        _logger.LogInformation("Importing remaining {AddressCount}.", imports.Count);
         _ = await _typesenseClient
             .ImportDocuments(collectionName, imports)
             .ConfigureAwait(false);
