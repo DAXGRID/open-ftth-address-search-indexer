@@ -168,7 +168,7 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
             // If no polygons are supplied we just index everything.
             if (indexInsidePolygons.Count > 0)
             {
-                if (!indexInsidePolygons.Any(polygon => polygon.Intersects(new Point(address.NorthCoordinate, address.EastCoordinate))))
+                if (!indexInsidePolygons.Any(polygon => polygon.Intersects(new Point(address.EastCoordinate, address.NorthCoordinate))))
                 {
                     // We only want to index if the addres is inside one or more of the supplied polygons.
                     continue;
