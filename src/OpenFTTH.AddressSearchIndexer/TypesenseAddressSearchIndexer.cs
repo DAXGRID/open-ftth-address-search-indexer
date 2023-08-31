@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using NetTopologySuite.Geometries;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -74,20 +75,26 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
 
         // We want all the collections that follows the collection name scheme
         // that is not the current aliased collection.
-        var collectionToBeDeleted = collections
+        var collectionsToBeDeleted = collections
             .Select(x => x.Name)
             .Where(x => x.StartsWith(_setting.Typesense.CollectionAlias,
                                      StringComparison.InvariantCulture))
-            .Where(x => x != collectionAlias?.CollectionName);
+            .Where(x => x != collectionAlias?.CollectionName)
+            .ToList();
 
-        foreach (var c in collectionToBeDeleted)
+        foreach (var collectionToBeDeleted in collectionsToBeDeleted)
         {
-            _logger.LogInformation("Deleting dead collection '{Collection}'.", c);
-            await _typesenseClient.DeleteCollection(c).ConfigureAwait(false);
+            _logger.LogInformation(
+                "Deleting dead collection '{Collection}'.",
+                collectionToBeDeleted);
+
+            await _typesenseClient
+                .DeleteCollection(collectionToBeDeleted)
+                .ConfigureAwait(false);
         }
     }
 
-    public async Task Index(AddressSearchIndexProjection projection)
+    public async Task Index(AddressSearchIndexProjection projection, IReadOnlyCollection<Polygon> indexInsidePolygons)
     {
         var collectionName = $"{_setting.Typesense.CollectionAlias}-{Guid.NewGuid()}";
 
@@ -95,13 +102,13 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
         await CreateCollection(collectionName).ConfigureAwait(false);
 
         _logger.LogInformation("Starting indexing to Typesense.");
-        var count = await IndexProjection(projection, collectionName)
-            .ConfigureAwait(false);
-        _logger.LogInformation(
-            "Finished indexing a total of {Total} documents to Typesense.", count);
+        var count = await IndexProjection(projection, collectionName, indexInsidePolygons).ConfigureAwait(false);
 
-        var previousCollectionAlias =
-            await RetrieveCollectionAlias().ConfigureAwait(false);
+        _logger.LogInformation(
+            "Finished indexing a total of {Total} documents to Typesense.",
+            count);
+
+        var previousCollectionAlias = await RetrieveCollectionAlias().ConfigureAwait(false);
 
         _logger.LogInformation(
             "Switching {Alias} to {CollectionAlias}.",
@@ -151,12 +158,23 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
 
     private async Task<int> IndexProjection(
         AddressSearchIndexProjection projection,
-        string collectionName)
+        string collectionName,
+        IReadOnlyCollection<Polygon> indexInsidePolygons)
     {
         var imports = new List<TypesenseAddress>();
         var count = 0;
         foreach (var address in projection.IdToAddress.Values)
         {
+            // If no polygons are supplied we just index everything.
+            if (indexInsidePolygons.Count > 0)
+            {
+                if (!indexInsidePolygons.Any(polygon => polygon.Intersects(new Point(address.NorthCoordinate, address.EastCoordinate))))
+                {
+                    // We only want to index if the addres is inside one or more of the supplied polygons.
+                    continue;
+                }
+            }
+
             count++;
             if (imports.Count == _setting.Typesense.BatchSize)
             {

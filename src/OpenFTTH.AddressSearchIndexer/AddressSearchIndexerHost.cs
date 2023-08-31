@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using NetTopologySuite.Geometries;
 using OpenFTTH.EventSourcing;
 using System.Diagnostics;
 
@@ -41,9 +42,19 @@ internal sealed class AddressSearchIndexerHost : BackgroundService
             "Memory after dehydration {MibiBytes}.",
             Process.GetCurrentProcess().PrivateMemorySize64 / 1024 / 1024);
 
+        var polygonDatabase = _setting.DatabasePolygon is not null
+            ? new PolygonDatabase(_setting.DatabasePolygon)
+            : null;
+
+        var indexInsidePolygons = polygonDatabase is not null
+            ? polygonDatabase.RetrievePolygons().AsReadOnly()
+            : new List<Polygon>().AsReadOnly();
+
         var projection = _eventStore.Projections.Get<AddressSearchIndexProjection>();
 
-        await _addressSearchIndexer.Index(projection).ConfigureAwait(false);
+        await _addressSearchIndexer
+            .Index(projection, indexInsidePolygons)
+            .ConfigureAwait(false);
 
         _logger.LogInformation(
             "Memory after address indexing {MibiBytes}.",
@@ -58,11 +69,32 @@ internal sealed class AddressSearchIndexerHost : BackgroundService
                 .CatchUpAsync(stoppingToken)
                 .ConfigureAwait(false);
 
+            var newIndexInsidePolygon = polygonDatabase is not null
+                ? polygonDatabase.RetrievePolygons().AsReadOnly()
+                : new List<Polygon>().AsReadOnly();
+
+            var hasIndexInsidePolygonChanged =
+                !(new GeometryCollection(indexInsidePolygons.ToArray())
+                  .EqualsExact(new GeometryCollection(newIndexInsidePolygon.ToArray())));
+
+            // Update to use the new index inside polygon for future comparisons.
+            indexInsidePolygons = newIndexInsidePolygon;
+
             if (changes > 0)
             {
                 _logger.LogInformation("{Count} changes so we do import.", changes);
                 await _addressSearchIndexer
-                    .Index(projection)
+                    .Index(projection, indexInsidePolygons)
+                    .ConfigureAwait(false);
+            }
+            else if (hasIndexInsidePolygonChanged)
+            {
+                _logger.LogInformation(
+                    "The index inside polygons has changed, starting indexing projection.",
+                    changes);
+
+                await _addressSearchIndexer
+                    .Index(projection, indexInsidePolygons)
                     .ConfigureAwait(false);
             }
             else

@@ -9,3 +9,8 @@ dotnet_diagnostic.CA1848.severity = none
 # CA1812: We remove this since we mainly use dependency injection,
 # so a lot of classes might seem that they have not been instantiated.
 dotnet_diagnostic.CA1812.severity = none
+
+
+# CA2100: Review if the query string passed to 'NpgsqlCommand.NpgsqlCommand(string? cmdText, NpgsqlConnection? connection)' in 'RetrieveSupplyZonePolygons', accepts any user input
+# We do not have any user input in this application, so we can safely disable this warning.
+dotnet_diagnostic.CA2100.severity = none

@@ -19,13 +19,15 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 {
     private uint _count;
     private readonly ILogger<AddressSearchIndexProjection> _logger;
+    private readonly Dictionary<Guid, PostCode> _idToPostCode = new();
+    private readonly Dictionary<Guid, string> _idToRoadName = new();
+    private readonly Dictionary<Guid, AccessAddress> _idToAddress = new();
 
-    public readonly Dictionary<Guid, PostCode> IdToPostCode = new();
-    public readonly Dictionary<Guid, string> IdToRoadName = new();
-    public readonly Dictionary<Guid, AccessAddress> IdToAddress = new();
+    public IReadOnlyDictionary<Guid, PostCode> IdToPostCode => _idToPostCode;
+    public IReadOnlyDictionary<Guid, string> IdToRoadName => _idToRoadName;
+    public IReadOnlyDictionary<Guid, AccessAddress> IdToAddress => _idToAddress;
 
-    public AddressSearchIndexProjection(
-        ILogger<AddressSearchIndexProjection> logger)
+    public AddressSearchIndexProjection(ILogger<AddressSearchIndexProjection> logger)
     {
         _logger = logger;
 
@@ -101,7 +103,7 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 
     private void HandleAccessAddressCreated(AccessAddressCreated accessAddressCreated)
     {
-        IdToAddress.Add(
+        _idToAddress.Add(
             accessAddressCreated.Id,
             new(
                 Id: accessAddressCreated.Id,
@@ -116,8 +118,8 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 
     private void HandleAccessAddressRoadIdChanged(AccessAddressRoadIdChanged accessAddressRoadIdChanged)
     {
-        var oldAccessAddress = IdToAddress[accessAddressRoadIdChanged.Id];
-        IdToAddress[accessAddressRoadIdChanged.Id] = oldAccessAddress with
+        var oldAccessAddress = _idToAddress[accessAddressRoadIdChanged.Id];
+        _idToAddress[accessAddressRoadIdChanged.Id] = oldAccessAddress with
         {
             RoadId = accessAddressRoadIdChanged.RoadId,
         };
@@ -125,8 +127,8 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 
     private void HandleAccessAddressSupplementaryTownNameChanged(AccessAddressSupplementaryTownNameChanged accessAddressSupplementaryTownNameChanged)
     {
-        var oldAccessAddress = IdToAddress[accessAddressSupplementaryTownNameChanged.Id];
-        IdToAddress[accessAddressSupplementaryTownNameChanged.Id] = oldAccessAddress with
+        var oldAccessAddress = _idToAddress[accessAddressSupplementaryTownNameChanged.Id];
+        _idToAddress[accessAddressSupplementaryTownNameChanged.Id] = oldAccessAddress with
         {
             TownName = accessAddressSupplementaryTownNameChanged.SupplementaryTownName,
         };
@@ -134,8 +136,8 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 
     private void HandleAccessAddressPostCodeIdChanged(AccessAddressPostCodeIdChanged accessAddressPostCodeIdChanged)
     {
-        var oldAccessAddress = IdToAddress[accessAddressPostCodeIdChanged.Id];
-        IdToAddress[accessAddressPostCodeIdChanged.Id] = oldAccessAddress with
+        var oldAccessAddress = _idToAddress[accessAddressPostCodeIdChanged.Id];
+        _idToAddress[accessAddressPostCodeIdChanged.Id] = oldAccessAddress with
         {
             PostCodeId = accessAddressPostCodeIdChanged.PostCodeId,
         };
@@ -143,8 +145,8 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 
     private void HandleAccessAddressHouseNumberChanged(AccessAddressHouseNumberChanged accessAddressHouseNumberChanged)
     {
-        var oldAccessAddress = IdToAddress[accessAddressHouseNumberChanged.Id];
-        IdToAddress[accessAddressHouseNumberChanged.Id] = oldAccessAddress with
+        var oldAccessAddress = _idToAddress[accessAddressHouseNumberChanged.Id];
+        _idToAddress[accessAddressHouseNumberChanged.Id] = oldAccessAddress with
         {
             HouseNumber = accessAddressHouseNumberChanged.HouseNumber
         };
@@ -152,8 +154,8 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 
     private void HandleAccessAddressCoordinateChanged(AccessAddressCoordinateChanged accessAddressCoordinateChanged)
     {
-        var oldAccessAddress = IdToAddress[accessAddressCoordinateChanged.Id];
-        IdToAddress[accessAddressCoordinateChanged.Id] = oldAccessAddress with
+        var oldAccessAddress = _idToAddress[accessAddressCoordinateChanged.Id];
+        _idToAddress[accessAddressCoordinateChanged.Id] = oldAccessAddress with
         {
             NorthCoordinate = accessAddressCoordinateChanged.NorthCoordinate,
             EastCoordinate = accessAddressCoordinateChanged.EastCoordinate
@@ -162,20 +164,20 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 
     private void HandleAccessAddressDeleted(AccessAddressDeleted accessAddressDeleted)
     {
-        IdToAddress.Remove(accessAddressDeleted.Id);
+        _idToAddress.Remove(accessAddressDeleted.Id);
     }
 
     private void HandlePostCodeCreated(PostCodeCreated postCodeCreated)
     {
-        IdToPostCode.Add(
+        _idToPostCode.Add(
             postCodeCreated.Id,
             new(postCodeCreated.Number, postCodeCreated.Name));
     }
 
     private void HandlePostCodeNameChanged(PostCodeNameChanged postCodeNameChanged)
     {
-        var postCode = IdToPostCode[postCodeNameChanged.Id];
-        IdToPostCode[postCodeNameChanged.Id] = postCode with
+        var postCode = _idToPostCode[postCodeNameChanged.Id];
+        _idToPostCode[postCodeNameChanged.Id] = postCode with
         {
             Name = postCodeNameChanged.Name
         };
@@ -183,22 +185,22 @@ internal sealed class AddressSearchIndexProjection : ProjectionBase
 
     private void HandlePostCodeDeleted(PostCodeDeleted postCodeDeleted)
     {
-        IdToPostCode.Remove(postCodeDeleted.Id);
+        _idToPostCode.Remove(postCodeDeleted.Id);
     }
 
     private void HandleRoadCreated(RoadCreated roadCreated)
     {
-        IdToRoadName.Add(roadCreated.Id, roadCreated.Name);
+        _idToRoadName.Add(roadCreated.Id, roadCreated.Name);
     }
 
     private void HandleRoadNameChanged(RoadNameChanged roadNameChanged)
     {
-        IdToRoadName[roadNameChanged.Id] = roadNameChanged.Name;
+        _idToRoadName[roadNameChanged.Id] = roadNameChanged.Name;
     }
 
     private void HandleRoadDeleted(RoadDeleted roadDeleted)
     {
-        IdToRoadName.Remove(roadDeleted.Id);
+        _idToRoadName.Remove(roadDeleted.Id);
     }
 
     public override Task DehydrationFinishAsync()
