@@ -89,9 +89,7 @@ internal sealed class AddressSearchIndexerHost : BackgroundService
             }
             else if (hasIndexInsidePolygonChanged)
             {
-                _logger.LogInformation(
-                    "The index inside polygons has changed, starting indexing projection.",
-                    changes);
+                _logger.LogInformation("The index inside polygons has changed, starting indexing projection.");
 
                 await _addressSearchIndexer
                     .Index(projection, indexInsidePolygons)
