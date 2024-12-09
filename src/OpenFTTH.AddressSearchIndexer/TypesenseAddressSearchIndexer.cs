@@ -180,9 +180,7 @@ internal sealed class TypesenseAddressSearchIndexer : IAddressSearchIndexer
             {
                 _logger.LogInformation("Importing {AddressCount}.", imports.Count);
                 var results = await _typesenseClient
-                    .ImportDocuments(collectionName,
-                                     imports,
-                                     (int)_setting.Typesense.BatchSize)
+                    .ImportDocuments(collectionName, imports)
                     .ConfigureAwait(false);
 
                 if (results.Any(x => !x.Success))
