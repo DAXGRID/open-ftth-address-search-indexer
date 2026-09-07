@@ -3,7 +3,7 @@ version: 2.1
 executors:
   dotnet-core-sdk:
     docker:
-    - image: mcr.microsoft.com/dotnet/sdk:9.0
+    - image: mcr.microsoft.com/dotnet/sdk:10.0
       auth:
         username: $DOCKER_LOGIN
         password: $DOCKER_ACCESSTOKEN
@@ -11,7 +11,7 @@ executors:
     environment:
       IMAGE_NAME: openftth/address-search-indexer
     docker:
-      - image: cimg/base:2023.08
+      - image: cimg/base:current
         auth:
           username: $DOCKER_LOGIN
           password: $DOCKER_ACCESSTOKEN
@@ -22,7 +22,7 @@ executors:
       GIT_USER_NAME: "dax-bot"
       GIT_USER_EMAIL: "admin@dax.dk"
       GIT_CLONE_REPO: "git@github.com:DAXGRID/dax-charts.git"
-      SSH_FINGERPRINT: "37:2d:dc:b1:1f:be:9b:dd:45:93:53:be:ec:81:d4:59"
+      SSH_FINGERPRINT: "SHA256:4vF7pAFsPVgHxUSlg32wammb2gJkSVbnjBMtLBWtqjw"
     docker:
     - image: alpine/git
 

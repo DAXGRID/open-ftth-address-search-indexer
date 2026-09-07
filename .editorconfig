@@ -14,3 +14,6 @@ dotnet_diagnostic.CA1812.severity = none
 # CA2100: Review if the query string passed to 'NpgsqlCommand.NpgsqlCommand(string? cmdText, NpgsqlConnection? connection)' in 'RetrieveSupplyZonePolygons', accepts any user input
 # We do not have any user input in this application, so we can safely disable this warning.
 dotnet_diagnostic.CA2100.severity = none
+
+# CA1873: We won't disable logging.
+dotnet_diagnostic.CA1873.severity = none
